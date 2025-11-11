@@ -1,0 +1,15 @@
+name: argweaver_py2
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=2.7
+  - pip
+  - numpy
+  - parallel
+  - gcc
+  - gxx
+  - make
+  - wget
+  - pip:
+      - git+https://github.com/mdrasmus/argweaver.git

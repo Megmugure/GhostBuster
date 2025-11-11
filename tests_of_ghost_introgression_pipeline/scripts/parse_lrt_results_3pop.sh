@@ -1,10 +1,5 @@
 #!/bin/bash
-# Script: parse_lrt_results_3pop.sh
-# Author: Margaret Wanjiku
-# Purpose:
-#   Parses IMa3 3-pop LRT outputs and extracts LRT stats.
-# Output:
-#   results/ima3/All_LRT_results_3pop.csv
+# Robust parser for 3pop LRT results (Snakemake output structure)
 
 set -euo pipefail
 
@@ -29,4 +24,4 @@ for file in results/ima3/LRT_outfiles_3pop/*.LRT.out; do
     done < "$file"
 done
 
-echo "Parsed 3pop LRT results saved to $OUTPUT_FILE"
+echo "✔ Parsed 3pop LRT results saved to $OUTPUT_FILE"

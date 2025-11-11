@@ -1,36 +1,17 @@
-###############################################
-# Snakefile.part3 — ARGweaver + Modality Testing
-# Author: Margaret Wanjiku
-# Description:
-#   - Runs ARGweaver on alignments to infer ARGs and TMRCA
-#   - Extracts per-site TMRCA medians
-#   - Performs modality tests (KS test, Dip test)
-#   - Aggregates results for summary analysis
-# Usage:
-#   snakemake -s Snakefile.part3 --use-conda --cores <N>
-###############################################
+# ---------------------------
+# PART 3: ARGWEAVER + MODALITY
+# ---------------------------
 
-# Define models and replicates to run
+# Snakefile.part3 — Argweaver + Modality Testing Pipeline
+
 models = ["model1"]
 replicates = ["replicate0_0"]
 
-#######################################################
-# Rule: all
-# Purpose: Master rule listing expected final outputs
-#######################################################
 rule all:
     input:
-        # Per-replicate modality test summaries
-        expand("results/modality_test/{model}_{replicate}_summary.csv",
-               model=models, replicate=replicates),
-        # Combined summary of all replicates
+        expand("results/modality_test/{model}_{replicate}_summary.csv", model=models, replicate=replicates),
         "results/modality_test/modality_combined_summary.csv"
 
-#######################################################
-# Rule: install_argweaver
-# Purpose: Download and compile ARGweaver (Python 2.7)
-# Output: Marker file indicating ARGweaver was installed
-#######################################################
 rule install_argweaver:
     output:
         touch("software/argweaver_installed.ok")
@@ -40,26 +21,19 @@ rule install_argweaver:
         """
         mkdir -p software
         cd software
-
-        # Download and extract ARGweaver source
         wget -O argweaver.tar.gz https://github.com/mdrasmus/argweaver/archive/refs/heads/master.tar.gz
         tar -xzf argweaver.tar.gz
         cd argweaver-master
         make
 
-        # Link binaries to scripts/ for easy access
+        # Link compiled binaries to scripts/
         ln -sf "$(pwd)/bin/arg-sample" ../../scripts/arg-sample
         ln -sf "$(pwd)/bin/arg-extract-tmrca" ../../scripts/arg-extract-tmrca
 
         touch ../../software/argweaver_installed.ok
         """
 
-#######################################################
-# Rule: run_argweaver
-# Purpose: Run ARGweaver's arg-sample and extract TMRCA
-# Input: FASTA alignment
-# Output: TMRCA values per site
-#######################################################
+
 rule run_argweaver:
     input:
         fasta = "data/fasta/{model}_{replicate}.fasta"
@@ -73,12 +47,10 @@ rule run_argweaver:
         arg-extract-tmrca {input.fasta}.arg.%d.smc.gz > {output.tmrca}
         """
 
-#######################################################
-# Rule: extract_median_tmrca
-# Purpose: Extract median TMRCA per site (column 5)
-# Input: ARGweaver .tmrca.txt file
-# Output: One median TMRCA per line
-#######################################################
+
+
+
+
 rule extract_median_tmrca:
     input:
         tmrca = "results/argweaver/{model}_{replicate}.tmrca.txt"
@@ -89,12 +61,6 @@ rule extract_median_tmrca:
         bash scripts/extract_median_tmrca.sh {input.tmrca} {output.medians}
         """
 
-#######################################################
-# Rule: run_modality_tests
-# Purpose: Use R to test for multimodality of TMRCA
-# Input: median values from previous step
-# Output: Test summary CSV, histograms, summary stats
-#######################################################
 rule run_modality_tests:
     input:
         medians = "results/modality_test/{model}_{replicate}_medians.txt"
@@ -105,27 +71,14 @@ rule run_modality_tests:
         stats_txt = "results/modality_test/{model}_{replicate}_stats.txt"
     shell:
         """
-        Rscript scripts/run_modality_tests.R \
-            {input.medians} \
-            {output.summary} \
-            {output.hist_pdf} \
-            {output.hist_png} \
-            {output.stats_txt}
+        Rscript scripts/run_modality_tests.R {input.medians} {output.summary} {output.hist_pdf} {output.hist_png} {output.stats_txt}
         """
 
-#######################################################
-# Rule: combine_modality_results
-# Purpose: Merge all summary CSVs into one table
-#######################################################
 rule combine_modality_results:
     input:
-        expand("results/modality_test/{model}_{replicate}_summary.csv",
-               model=models, replicate=replicates)
+        expand("results/modality_test/{model}_{replicate}_summary.csv", model=models, replicate=replicates)
     output:
         "results/modality_test/modality_combined_summary.csv"
     shell:
-        """
-        # Combine header from first file and body from all
-        head -n 1 {input[0]} > {output}
-        tail -n +2 -q {input} >> {output}
-        """
+        "head -n 1 {input[0]} > {output} && tail -n +2 -q {input} >> {output}"
+
