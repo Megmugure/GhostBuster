@@ -1,1 +1,9 @@
 IMa3/
+.snakemake/
+logs/ runs/ results/ scratch/ tmp/
+*.log
+__pycache__/ .ipynb_checkpoints/
+
+# big/derived artifacts
+tests_of_ghost_introgression_pipeline/data/
+tests_of_ghost_introgression_pipeline/software/argweaver-master/
